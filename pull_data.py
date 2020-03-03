@@ -65,7 +65,16 @@ def pull_stocks_list(driver, base_url, path):
     return result
 
 
-def download_graphic(driver, stock, svg_path):
+def download_graphic(driver, stock, out_dir):
+    stock_dir = Path(out_dir, re.sub(r'\W', '_', stock['name']))
+    stock_dir.mkdir(parents=True, exist_ok=True)
+
+    svg_path = Path(stock_dir, 'graphic.svg')
+    if svg_path.exists():
+        print('\tsvg [skipped]')
+        return
+
+    print('\tsvg')
     driver.get(stock['href'])
 
     wait = WebDriverWait(driver, 10)
@@ -87,18 +96,8 @@ def pull_quotes(driver, stocks):
     out_dir = Path('data', today)
 
     for stock in stocks:
-        name = stock['name']
-        print(name)
-
-        stock_dir = Path(out_dir, re.sub(r'\W', '_', name))
-        stock_dir.mkdir(parents=True, exist_ok=True)
-
-        svg_path = Path(stock_dir, 'graphic.svg')
-        if not svg_path.exists():
-            print('\tsvg')
-            download_graphic(driver, stock, svg_path)
-        else:
-            print('\tsvg [skipped]')
+        print(stock['name'])
+        download_graphic(driver, stock, out_dir)
 
     driver.close()
 

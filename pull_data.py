@@ -7,6 +7,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.firefox import GeckoDriverManager
 from pathlib import Path
 import json
+import re
+import datetime
 
 
 def pull_stocks_list(driver, base_url, path):
@@ -63,6 +65,44 @@ def pull_stocks_list(driver, base_url, path):
     return result
 
 
+def download_graphic(driver, stock, svg_path):
+    driver.get(stock['href'])
+
+    wait = WebDriverWait(driver, 10)
+    selector = (By.CLASS_NAME, 'header-cotizaciones')
+    condition = EC.presence_of_element_located((By.CLASS_NAME, "highcharts-container"))
+    svg = wait.until(condition)
+    assert svg is not None, 'svg not found'
+
+    data = svg.get_attribute('innerHTML')
+
+    tmp_path = Path(str(svg_path) + '.tmp')
+    with open(tmp_path, 'w') as file:
+        file.write(data)
+    tmp_path.rename(svg_path)
+
+
+def pull_quotes(driver, stocks):
+    today = datetime.datetime.today().strftime('%Y-%m-%d')
+    out_dir = Path('data', today)
+
+    for stock in stocks:
+        name = stock['name']
+        print(name)
+
+        stock_dir = Path(out_dir, re.sub(r'\W', '_', name))
+        stock_dir.mkdir(parents=True, exist_ok=True)
+
+        svg_path = Path(stock_dir, 'graphic.svg')
+        if not svg_path.exists():
+            print('\tsvg')
+            download_graphic(driver, stock, svg_path)
+        else:
+            print('\tsvg [skipped]')
+
+    driver.close()
+
+
 driver = webdriver.Firefox(executable_path=GeckoDriverManager().install())
 base_url = 'https://www.invertironline.com/'
 stocks_list_path = Path('stocks.json')
@@ -75,6 +115,9 @@ else:
         json.dump(stocks, file)
 
 
-print(stocks)
-print(len(stocks))
+pull_quotes(driver, stocks)
+
+
+
+
 #driver.close()

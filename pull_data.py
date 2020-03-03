@@ -9,6 +9,7 @@ from pathlib import Path
 import json
 import re
 import datetime
+import requests
 
 
 def pull_stocks_list(driver, base_url, path):
@@ -65,10 +66,7 @@ def pull_stocks_list(driver, base_url, path):
     return result
 
 
-def download_graphic(driver, stock, out_dir):
-    stock_dir = Path(out_dir, re.sub(r'\W', '_', stock['name']))
-    stock_dir.mkdir(parents=True, exist_ok=True)
-
+def download_graphic(driver, stock, stock_dir):
     svg_path = Path(stock_dir, 'graphic.svg')
     if svg_path.exists():
         print('\tsvg [skipped]')
@@ -91,13 +89,42 @@ def download_graphic(driver, stock, out_dir):
     tmp_path.rename(svg_path)
 
 
+def download_data(driver, stock, stock_dir):
+    data_path = Path(stock_dir, 'data.json')
+    if data_path.exists():
+        print('\tdata [skipped]')
+        return
+
+    print('\tdata')
+
+    link = stock['href']
+    match = re.search(r'/Index/(\d+)$', link)
+    assert match is not None, 'id not found'
+    id = match.group(1)
+
+    url = base_url + f'/Titulo/GraficoIntradiario?idTitulo={id}&idTipo=2&idMercado=1'
+    response = requests.get(url, timeout=5)
+    response.raise_for_status()
+    data = response.text
+
+    tmp_path = Path(str(data_path) + '.tmp')
+    with open(tmp_path, 'w') as file:
+        file.write(data)
+    tmp_path.rename(data_path)
+
+
 def pull_quotes(driver, stocks):
     today = datetime.datetime.today().strftime('%Y-%m-%d')
     out_dir = Path('data', today)
 
     for stock in stocks:
         print(stock['name'])
-        download_graphic(driver, stock, out_dir)
+
+        stock_dir = Path(out_dir, re.sub(r'\W', '_', stock['name']))
+        stock_dir.mkdir(parents=True, exist_ok=True)
+
+        download_graphic(driver, stock, stock_dir)
+        download_data(driver, stock, stock_dir)
 
     driver.close()
 
@@ -116,7 +143,4 @@ else:
 
 pull_quotes(driver, stocks)
 
-
-
-
-#driver.close()
+driver.quit()

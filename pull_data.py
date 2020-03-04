@@ -83,10 +83,7 @@ def download_graphic(driver, stock, stock_dir):
 
     data = svg.get_attribute('innerHTML')
 
-    tmp_path = Path(str(svg_path) + '.tmp')
-    with open(tmp_path, 'w') as file:
-        file.write(data)
-    tmp_path.rename(svg_path)
+    safe_save(svg_path, data)
 
 
 def download_data(driver, stock, stock_dir):
@@ -107,10 +104,14 @@ def download_data(driver, stock, stock_dir):
     response.raise_for_status()
     data = response.text
 
-    tmp_path = Path(str(data_path) + '.tmp')
+    safe_save(data_path, data)
+
+
+def save_save(path, data):
+    tmp_path = Path(str(path) + '.tmp')
     with open(tmp_path, 'w') as file:
         file.write(data)
-    tmp_path.rename(data_path)
+    tmp_path.rename(path)
 
 
 def pull_quotes(driver, stocks):

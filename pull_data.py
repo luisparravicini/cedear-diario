@@ -4,6 +4,7 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from webdriver_manager.firefox import GeckoDriverManager
 from pathlib import Path
 import json
@@ -66,6 +67,13 @@ def pull_stocks_list(driver, base_url, path):
     return result
 
 
+def safe_save(path, data):
+    tmp_path = Path(str(path) + '.tmp')
+    with open(tmp_path, 'w') as file:
+        file.write(data)
+    tmp_path.rename(path)
+
+
 def download_graphic(driver, stock, stock_dir):
     svg_path = Path(stock_dir, 'graphic.svg')
     if svg_path.exists():
@@ -107,13 +115,6 @@ def download_data(driver, stock, stock_dir):
     safe_save(data_path, data)
 
 
-def save_save(path, data):
-    tmp_path = Path(str(path) + '.tmp')
-    with open(tmp_path, 'w') as file:
-        file.write(data)
-    tmp_path.rename(path)
-
-
 def pull_quotes(driver, stocks):
     today = datetime.datetime.today().strftime('%Y-%m-%d')
     out_dir = Path('data', today)
@@ -130,7 +131,10 @@ def pull_quotes(driver, stocks):
     driver.close()
 
 
-driver = webdriver.Firefox(executable_path=GeckoDriverManager().install())
+options = FirefoxOptions()
+options.add_argument("--headless")
+firefox_path = GeckoDriverManager().install()
+driver = webdriver.Firefox(options=options, executable_path=firefox_path)
 base_url = 'https://www.invertironline.com/'
 stocks_list_path = Path('stocks.json')
 if stocks_list_path.exists():

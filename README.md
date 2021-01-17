@@ -3,3 +3,5 @@ El script usa los datos que provee el sitio de Invertir Online para armar una li
 
 Luego por cada CEDEAR obtiene un gráfico de las operaciones del día (es un .svg) y también un .json con la lista de las operaciones diarias. Estos datos se guardan dentro de una estructura de directorio `data/YYY-MM-DD/{graphic.svg, data.json}`
 
+
+__El proyecto está archivado, no va a recibir actualizaciones__
